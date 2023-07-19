@@ -1,0 +1,5 @@
+loguru
+pytest-playwright
+fastapi[all]
+uvicorn[standard]
+.

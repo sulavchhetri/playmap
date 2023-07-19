@@ -1,0 +1,12 @@
+services:
+ streamer: &python
+  build:
+   context: .
+   dockerfile: ./src/Dockerfile
+  command: bash -c "python src/app.py"
+  container_name: playmap
+  ports:
+    - '5000:5000'
+  volumes:
+   - ./:/data
+  restart: on-failure
