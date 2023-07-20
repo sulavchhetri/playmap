@@ -44,10 +44,10 @@ async def get_map_response_body(response, final_list):
     if not final_list['url']:
         if url := identify_google_map_url(response.url):
             logger.info("Found from map from playwright")
-            final_list['url'] = url
             logger.info("The url is {}", url)
             body = await response.body()
             final_list['response'] = body.decode()
+            final_list['url'] = url
 
 
 async def process_map(url):
