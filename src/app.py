@@ -63,7 +63,6 @@ async def process_map(url):
         'url': None,
         'response': None
     }
-
     close_time = 15 + time.time()
     page = await browser.new_page()
     logger.info("The url is received and playwright is opened")
