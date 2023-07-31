@@ -1,41 +1,43 @@
-import requests
+import json
 import time
-from geogather.googlemaps.map import extract_info_from_response
+import requests
+from geogather.googlemaps.map import generate_search_url, get_extra_data, scrape_google_map,extract_info_from_response
+from geogather.utils.generate import gen_search_points_from_square
+from geogather.utils.filter import filter_bad_data
 
-map_urls = [
-    "https://www.google.com/maps/search/cafes+in+los+angeles/@34.052235,-118.243683,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in+london/@51.507351,-0.127758,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in+tokyo/@35.6895,139.6917,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in+sydney/@-33.8688,151.2093,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in+paris/@48.8566,2.3522,12z?hl=en",
-    "https://www.google.com/maps/search/cafes+in/new+york/@40.7380004,-74.011112,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in/san+francisco/@37.774929,-122.419418,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in/berlin/@52.5200,13.4050,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in/toronto/@43.651070,-79.347015,19z?hl=en",
-    "https://www.google.com/maps/search/cafes+in/amsterdam/@52.3680,4.9036,19z?hl=en"
-]
+center = (27.700629106875546, 85.32850170695393)
+query = "church"
+distance = 100
+points = 7
+agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
-initial = time.time()
+urls = gen_search_points_from_square(
+    center_coordinate=center, distance=distance, points=points)
 
-for q in map_urls:
-    url = f"http://172.104.39.169:5000/process?q={q}"
+data = []
+
+for index, item in enumerate(urls):
+    q = generate_search_url(item, postal_code=None, query=query, center=center)
+    print(index)
+    try:
+        res = requests.get(f"http://127.0.0.1:5000/process?q={q}", timeout=60)
+        res = res.json()
+        url = res['data']['url']
+        if not url:
+            continue
+        data.append(extract_info_from_response(res['data']['response']))
+        new_data = get_extra_data(url, agent)
+
+        data.extend(new_data)
+    except Exception as e:
+        print(e)
+
+dat = scrape_google_map(data)
 
 
-    res = requests.get(url)
-    response = res.json()
-    if not response.get("data",{}).get("url",None):
-        print("No url")
-        continue
+d = filter_bad_data(dat,center=center,radius=distance)
 
-    if data := response['data']['response']:
-        parsed_data = extract_info_from_response(data)
-        if parsed_data:
-            print("Done")
-        else:
-            print("Bad data")
-    else:
-        print("Absent data")
+print(len(d))
 
-total = time.time()- initial
-
-print(int(total/10))
+with open("c.json", 'w', encoding='utf-8') as file:
+    json.dump(d, file)
